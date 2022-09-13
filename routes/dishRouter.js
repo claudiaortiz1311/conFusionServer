@@ -125,10 +125,11 @@ dishRouter.route('/:dishId')
     res.end('PUT operation not supported on /dishes/'
         + req.params.dishId + '/comments');
 })
-.delete(authenticate.verifyUser, (req, res, next) => {
+.delete(authenticate.verifyUser, authenticate.verifyAdmin, (req, res, next) => {
     Dishes.findById(req.params.dishId)
     .then((dish) => {
         if (dish != null) {
+            console.log(dish);
             for (var i = (dish.comments.length -1); i >= 0; i--) {
                 dish.comments.id(dish.comments[i]._id).remove();
             }
