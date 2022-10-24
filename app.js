@@ -10,14 +10,20 @@ var passport = require('passport');
 var authenticate = require('./authenticate');
 var config = require('./config');
 
+mongoose.Promise = require('bluebird');
+
 const Dishes = require('./models/dishes');
 
 const url = config.mongoUrl;
-const connect = mongoose.connect(url);
+const connect = mongoose.connect(url, {
+  useMongoClient: true
+});
 
 connect.then((db) => {
   console.log("Connected correctly to server");
 }, (err) => { console.log(err); });
+
+var app = express();
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -25,8 +31,7 @@ var dishRouter = require('./routes/dishRouter');
 var promoRouter = require('./routes/promoRouter');
 var leaderRouter = require('./routes/leaderRouter');
 var uploadRouter = require('./routes/uploadRouter');
-
-var app = express();
+var favouriteRouter = require('./routes/favouriteRouter');
 
 //passport
 app.use(passport.initialize());
@@ -67,15 +72,17 @@ app.use(auth);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
 app.use('/dishes', dishRouter);
 app.use('/promotions', promoRouter);
 app.use('/leaders', leaderRouter);
+app.use('/imageUpload', uploadRouter);
+app.use('/favorites', favouriteRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
-  next(createError(404));
+  var err = new Error('Not Found');
+  err.status = 404;
+  next(err);
 });
 
 // error handler
@@ -98,8 +105,5 @@ app.all('*', (req, res, next) => {
     res.redirect(307, 'https://' + req.hostname + ':' + app.get('secPort') + req.url);
   }
 });
-
-// upload files
-app.use('/imageUpload', uploadRouter);
 
 module.exports = app;
